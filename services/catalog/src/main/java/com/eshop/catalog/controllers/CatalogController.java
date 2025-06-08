@@ -1,17 +1,17 @@
 package com.eshop.catalog.controllers;
 
+import com.eshop.catalog.dto.CatalogBrandDTO;
 import com.eshop.catalog.dto.CatalogItemDTO;
+import com.eshop.catalog.dto.CatalogTypeDTO;
 import com.eshop.catalog.services.CatalogService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/product")
 public class CatalogController {
     private CatalogService catalogService;
     public CatalogController(CatalogService catalogService){
@@ -40,6 +40,18 @@ return this.catalogService.getItemsById(id);
     public List<CatalogItemDTO> GetCatalogItemsByName(@PathVariable String name)
     {
         return this.catalogService.getItemsByName(name);
+    }
+
+    @GetMapping("/brands")
+    public List<CatalogBrandDTO> GetCatalogBrands()
+    {
+        return this.catalogService.getBrands();
+    }
+
+    @GetMapping("/types")
+    public List<CatalogTypeDTO> GetCatalogTypes()
+    {
+        return this.catalogService.getTypes();
     }
 
     @GetMapping("/items/{id}/pic")

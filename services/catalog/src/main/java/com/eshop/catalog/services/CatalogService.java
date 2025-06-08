@@ -1,9 +1,13 @@
 package com.eshop.catalog.services;
 
+import com.eshop.catalog.dto.CatalogBrandDTO;
 import com.eshop.catalog.dto.CatalogItemDTO;
+import com.eshop.catalog.dto.CatalogTypeDTO;
 import com.eshop.catalog.entities.CatalogItem;
 import com.eshop.catalog.mappers.CatalogMapper;
+import com.eshop.catalog.repositories.CatalogBrandRepository;
 import com.eshop.catalog.repositories.CatalogItemRepository;
+import com.eshop.catalog.repositories.CatalogTypeRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
@@ -22,13 +26,26 @@ import java.util.stream.Collectors;
 @Service
 public class CatalogService {
     private final CatalogItemRepository repository;
+    private final CatalogBrandRepository repositoryBrand;
+    private final CatalogTypeRepository repositoryType;
     private final CatalogMapper mapper;
     private final ResourceLoader resourceLoader;
-    public CatalogService(CatalogItemRepository repository, CatalogMapper mapper, ResourceLoader resourceLoader) {
+    public CatalogService(CatalogBrandRepository brandRepository, CatalogTypeRepository typeRepository  ,CatalogItemRepository repository, CatalogMapper mapper, ResourceLoader resourceLoader) {
         this.repository = repository;
+        this.repositoryBrand = brandRepository;
+        this.repositoryType = typeRepository;
         this.mapper = mapper;
         this.resourceLoader = resourceLoader;
     }
+
+    public List<CatalogTypeDTO> getTypes(){
+        return this.repositoryType.findAll().stream().map(mapper::toDTO).collect(Collectors.toList());
+    }
+
+    public List<CatalogBrandDTO> getBrands(){
+        return this.repositoryBrand.findAll().stream().map(mapper::toDTO).collect(Collectors.toList());
+    }
+
     public List<CatalogItemDTO> getAllItems() {
         System.out.println(repository.findAll());
         var items= repository.findAll().stream().map(mapper::toDTO).collect(Collectors.toList());
