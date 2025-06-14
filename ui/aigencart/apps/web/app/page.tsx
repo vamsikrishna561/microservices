@@ -1,6 +1,7 @@
 import { Product } from "@repo/ui/types/product";
 import React from "react";
 import ProductHome from "./components/ProductHome";
+import ChatWidget from "./components/ChatWidget";
 async function fetchProducts(): Promise<Product[]> {
   try {
     const res = await fetch("http://localhost:8080/product/items"); // Adjust the URL as needed
@@ -21,6 +22,7 @@ export default async function Home() {
   return (
     <div className="flex max-w-7xl mx-auto px-4 py-8 gap-8">
       <ProductHome products={data}></ProductHome>
+      
     </div>
   );
 }
