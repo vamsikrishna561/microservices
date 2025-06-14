@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Boolean, Numeric, String, DateTime, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -7,31 +8,31 @@ Base = declarative_base()
 
 # Example model class - you can modify or add more as needed
 class CatalogItem(Base):
-    __tablename__ = 'Catalog'
+    __tablename__ = 'catalog'
 
-    Id = Column(Integer, primary_key=True)
-    Name = Column(String(255), nullable=False)
-    CatalogTypeId = Column(Integer, ForeignKey('CatalogType.Id'), nullable=False)
-    CatalogBrandId = Column(Integer, ForeignKey('CatalogBrand.Id'), nullable=False)
-    AvailableStock = Column(Integer, nullable=False, default=0)
-    OnReorder = Column(Boolean, nullable=False, default=False)
-    RestockThreshold = Column(Integer, nullable=False, default=0)
-    MaxStockThreshold = Column(Integer, nullable=False, default=0)
-    CatalogType = relationship("CatalogType")
-    CatalogBrand = relationship("CatalogBrand")
-    Description  = Column(String(500), nullable=True)
-    Price = Column(Numeric, nullable=False)
-    #Embedding = Column(String(2048), nullable=True)  # For storing vector as JSON string
-    PictureFileName = Column(String(500), nullable=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    catalogtype_id = Column(Integer, ForeignKey('catalog_type.id'), nullable=False)
+    catalogbrand_id = Column(Integer, ForeignKey('catalog_brand.id'), nullable=False)
+    available_stock = Column(Integer, nullable=False, default=0)
+    on_reorder = Column(Boolean, nullable=False, default=False)
+    restock_threshold = Column(Integer, nullable=False, default=0)
+    max_stock_threshold = Column(Integer, nullable=False, default=0)
+    catalog_type = relationship("CatalogType")
+    catalog_brand = relationship("CatalogBrand")
+    description = Column(String(500), nullable=True)
+    price = Column(Numeric, nullable=False)
+    embedding = Column(Vector(384), nullable=True)  # For storing vector as JSON string
+    picture_file_name = Column(String(500), nullable=True)
 
 class CatalogType(Base):
-    __tablename__ = 'CatalogType'
+    __tablename__ = 'catalog_type'
 
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    Name = Column(String(255), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), nullable=False)
 
 class CatalogBrand(Base):
-    __tablename__ = 'CatalogBrand'
+    __tablename__ = 'catalog_brand'
 
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    Name = Column(String(255), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), nullable=False)

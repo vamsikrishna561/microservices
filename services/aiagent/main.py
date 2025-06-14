@@ -1,11 +1,45 @@
+from typing import Any
 from fastapi import FastAPI, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from upload import models, database
+from sentence_transformers import SentenceTransformer
 import json
 import os
+from agents.agent import product_search_agent
+
+encoder = SentenceTransformer("all-MiniLM-L6-v2")
 
 app = FastAPI()
 database.init_db()
+
+class QueryInput(BaseModel):
+    query: str
+
+class APIResponse(BaseModel):
+    result: Any # Can be str, ProductSearchResult, etc.
+
+@app.post("/query", response_model=APIResponse)
+async def ask(query_input: QueryInput):
+    """
+    Processes a natural language query using the AI agent to search for products semantically.
+    """
+    try:
+        agent_result = await product_search_agent.run(query_input.query)
+        return {"result": agent_result.output}
+    except Exception as e:
+        print(f"Error processing query in API endpoint: {e}")
+        # Return a more user-friendly error message
+        return {"result": f"An error occurred while processing your request: {str(e)}"}
+
+
+def get_embedding(name: str, description: str | None):
+    # Combine name and description, handle missing description
+    text = name
+    if description:
+        text += " " + description
+    embedding = encoder.encode(text)
+    return embedding.tolist()
 
 def get_db():
     db = database.SessionLocal()
@@ -15,18 +49,18 @@ def get_db():
         db.close()
 
 def get_or_create_type(db: Session, type_name: str):
-    catalog_type = db.query(models.CatalogType).filter_by(Name=type_name).first()
+    catalog_type = db.query(models.CatalogType).filter_by(name=type_name).first()
     if not catalog_type:
-        catalog_type = models.CatalogType(Name=type_name)
+        catalog_type = models.CatalogType(name=type_name)
         db.add(catalog_type)
         db.commit()
         db.refresh(catalog_type)
     return catalog_type
 
 def get_or_create_brand(db: Session, brand_name: str):
-    catalog_brand = db.query(models.CatalogBrand).filter_by(Name=brand_name).first()
+    catalog_brand = db.query(models.CatalogBrand).filter_by(name=brand_name).first()
     if not catalog_brand:
-        catalog_brand = models.CatalogBrand(Name=brand_name)
+        catalog_brand = models.CatalogBrand(name=brand_name)
         db.add(catalog_brand)
         db.commit()
         db.refresh(catalog_brand)
@@ -48,16 +82,17 @@ def load_catalog(db: Session = Depends(get_db)):
 
             # Create the CatalogItem
             catalog_item = models.CatalogItem(
-                Id=item["Id"],
-                Name=item["Name"],
-                CatalogTypeId=cattype.Id,
-                CatalogBrandId=catbrand.Id,
-                AvailableStock=100,
-                RestockThreshold=10,
-                MaxStockThreshold=200,
-                Description=item.get("Description"),
-                Price=item["Price"],
-                PictureFileName=f"{item["Id"]}.webp",
+                id=item["Id"],
+                name=item["Name"],
+                catalogtype_id=cattype.id,
+                catalogbrand_id=catbrand.id,
+                available_stock=100,
+                restock_threshold=10,
+                max_stock_threshold=200,
+                description=item.get("Description"),
+                price=item["Price"],
+                picture_file_name=f"{item["Id"]}.webp",
+                embedding=get_embedding(item["Name"], item.get("Description"))
             )
             db.add(catalog_item)
             inserted_count += 1
@@ -66,3 +101,17 @@ def load_catalog(db: Session = Depends(get_db)):
         return {"message": f"{inserted_count} catalog items inserted successfully."}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/search_products")
+def search_products(q: str, max_price: float = None,db: Session = Depends(get_db)):
+    query_embedding = encoder.encode(q).tolist()
+    # SQL to do vector search + price filter
+    sql = """
+    SELECT id, name, price, embedding <=> :query_embedding AS distance
+    FROM catalog
+    WHERE (:max_price IS NULL OR price <= :max_price)
+    ORDER BY distance
+    LIMIT 10
+    """
+    result = db.execute(text(sql), {"query_embedding": query_embedding, "max_price": max_price})
+    return [dict(row) for row in result]

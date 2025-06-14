@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: vamsi
+      POSTGRES_DB: eshop
+    ports:
+      - "5433:5432"
